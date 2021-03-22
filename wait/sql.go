@@ -40,8 +40,20 @@ func (w *waitForSql) WaitUntilReady(ctx context.Context, target StrategyTarget) 
 
 	ticker := time.NewTicker(time.Millisecond * 100)
 	defer ticker.Stop()
+	var port nat.Port
 
-	port, err := target.MappedPort(ctx, w.Port)
+LOOP:
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			port, err = target.MappedPort(ctx, w.Port)
+			if err == nil {
+				break LOOP
+			}
+		}
+	}
 	if err != nil {
 		return fmt.Errorf("target.MappedPort: %v", err)
 	}

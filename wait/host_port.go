@@ -55,8 +55,22 @@ func (hp *HostPortStrategy) WaitUntilReady(ctx context.Context, target StrategyT
 	if err != nil {
 		return
 	}
+	ticker := time.NewTicker(time.Millisecond * 100)
+	defer ticker.Stop()
+	var port nat.Port
 
-	port, err := target.MappedPort(ctx, hp.Port)
+LOOP:
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			port, err = target.MappedPort(ctx, hp.Port)
+			if err == nil {
+				break LOOP
+			}
+		}
+	}
 	if err != nil {
 		return
 	}

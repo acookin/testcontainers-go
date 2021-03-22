@@ -90,7 +90,22 @@ func (ws *HTTPStrategy) WaitUntilReady(ctx context.Context, target StrategyTarge
 		return
 	}
 
-	port, err := target.MappedPort(ctx, ws.Port)
+	ticker := time.NewTicker(time.Millisecond * 100)
+	defer ticker.Stop()
+	var port nat.Port
+
+LOOP:
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			port, err = target.MappedPort(ctx, ws.Port)
+			if err == nil {
+				break LOOP
+			}
+		}
+	}
 	if err != nil {
 		return
 	}

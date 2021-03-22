@@ -119,6 +119,9 @@ func (c *DockerContainer) MappedPort(ctx context.Context, port nat.Port) (nat.Po
 	}
 
 	for k, p := range ports {
+		if len(p) == 0 {
+			continue
+		}
 		if k.Port() != port.Port() {
 			continue
 		}
